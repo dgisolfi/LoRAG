@@ -1,18 +1,18 @@
 model:
   pretrained_model: QizhiPei/biot5-base
-  out_dir: biot5_lora
-  max_len: 192
+  out_dir: biot5_qlora
+  max_len: 256
   batch_size: 4
-  lr: 3e-4
-  n_epochs: 15
+  lr: 2e-4
+  n_epochs: 5
 lora:
+  enabled: True
   r: 32
   alpha: 32
-  dropout: 0.0
-  enabled: True
+  dropout: 0.05
+  quantization: True
 data:
-  subset: 100 # None for all data
+  subset: 500 # None for all data
   dataset: derm_qa
   # dataset: medXpert
   # dataset: no_robots
-

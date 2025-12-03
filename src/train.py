@@ -7,6 +7,7 @@ Daniel Nicolas Gisolfi <dgisolfi3@gatech.edu>
 
 import os
 import pickle
+# import torch
 import argparse
 import evaluate
 from utils import *
@@ -15,7 +16,8 @@ from transformers import (
     AutoTokenizer,
     AutoModelForSeq2SeqLM,
     Seq2SeqTrainer,
-    Seq2SeqTrainingArguments
+    Seq2SeqTrainingArguments,
+    BitsAndBytesConfig
 )
 
 from peft import LoraConfig, get_peft_model
@@ -65,6 +67,10 @@ def tokenize_dataset(dataset, tokenizer, max_len, cache_file=None, force_regen=F
 
 
 def configure_lora(model, lora_cfg):
+    """
+    t5 specific modules:
+    https://huggingface.co/transformers/v4.5.1/_modules/transformers/models/t5/modeling_t5.html
+    """
     if not lora_cfg.get("enabled", False):
         return model
 
@@ -73,10 +79,12 @@ def configure_lora(model, lora_cfg):
         r=lora_cfg.get("r", 16),
         lora_alpha=lora_cfg.get("alpha", 32),
         lora_dropout=lora_cfg.get("dropout", 0.1),
+        # use_dora=?
+        # https://huggingface.co/docs/peft/en/developer_guides/lora#weight-decomposed-low-rank-adaptation-dora
         target_modules=[
             #  Query, key, value, output
             "q", "k", "v", "o",
-            #  The weight matrices for the first two 
+            # The weight matrices for the first two 
             # linear layers in T5's FFN block
             "wi_0", "wi_1", 
             # Weight matrix for output linear layer of 
@@ -152,6 +160,7 @@ def compute_metrics(pred, tokenizer):
 
 def train_model(model, tokenizer, train_dataset, cfg, cache_path=None, force_regen=False):
     model_out = os.path.join("./out", cfg["model"]["out_dir"])
+    qauntized = cfg["model"].get("quantization", False) 
 
     tokenized_train = tokenize_dataset(
         train_dataset, tokenizer,
@@ -168,6 +177,8 @@ def train_model(model, tokenizer, train_dataset, cfg, cache_path=None, force_reg
         predict_with_generate=True,
         logging_strategy="epoch",
         fp16=True, # Set to False on MPS (Apple silicon)
+        bf16=qauntized,
+        gradient_checkpointing=qauntized,
         save_total_limit=2
     )
 
@@ -185,6 +196,7 @@ def train_model(model, tokenizer, train_dataset, cfg, cache_path=None, force_reg
 
 def evaluate_model(model, tokenizer, eval_dataset, cfg, cache_path=None, force_regen=False):
     model_out = os.path.join("./out", cfg["model"]["out_dir"])
+    qauntized = cfg["model"].get("quantization", False) 
 
     tokenized_eval = tokenize_dataset(
         eval_dataset, tokenizer,
@@ -199,6 +211,7 @@ def evaluate_model(model, tokenizer, eval_dataset, cfg, cache_path=None, force_r
         predict_with_generate=True,
         logging_strategy="epoch",
         fp16=True, # Set to False on MPS (Apple silicon)
+        bf16=qauntized,
     )
 
     trainer = Seq2SeqTrainer(
@@ -217,7 +230,24 @@ def get_tokenizer(model_cfg):
     return AutoTokenizer.from_pretrained(model_cfg["pretrained_model"])
 
 def get_model(model_cfg):
-    return AutoModelForSeq2SeqLM.from_pretrained(model_cfg["pretrained_model"])
+    """ https://huggingface.co/docs/bitsandbytes/main/en/fsdp_qlora#training """
+    if model_cfg.get("quantization", False):
+        quant_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_compute_dtype=torch.bfloat16,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_use_double_quant=True,
+        )
+
+        model = AutoModelForSeq2SeqLM.from_pretrained(
+            model_cfg["pretrained_model"],
+            quantization_config=quant_config,
+            device_map="auto"
+        )
+    else:
+        model = AutoModelForSeq2SeqLM.from_pretrained(model_cfg["pretrained_model"])
+
+    return model
 
 
 def run_experiment(cfg, subset=None, force_regen=False):
