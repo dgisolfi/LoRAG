@@ -37,13 +37,13 @@ def tokenize_dataset(dataset, tokenizer, max_len, cache_file=None, force_regen=F
             [build_instruction(q) for q in batch["prompt"]],
             max_length=max_len,
             truncation=True,
-            padding="max_length"
+            padding="longest"
         )
         labels = tokenizer(
             batch["response"],
             max_length=max_len,
             truncation=True,
-            padding="max_length"
+            padding="longest"
         )
 
         # replace negative 100 with padding token for tokenizer
@@ -69,13 +69,20 @@ def configure_lora(model, lora_cfg):
         return model
 
     config = LoraConfig(
+        task_type="SEQ_2_SEQ_LM",
         r=lora_cfg.get("r", 16),
         lora_alpha=lora_cfg.get("alpha", 32),
-        # target_modules=["q", "k", "v", "o"],
-        target_modules=["q", "k", "v"],
         lora_dropout=lora_cfg.get("dropout", 0.1),
-        task_type="SEQ_2_SEQ_LM",
-        bias="none"
+        target_modules=[
+            #  Query, key, value, output
+            "q", "k", "v", "o",
+            #  The weight matrices for the first two 
+            # linear layers in T5's FFN block
+            "wi_0", "wi_1", 
+            # Weight matrix for output linear layer of 
+            # attention mechanism and FFN
+            "wo"
+        ]
     )
     model = get_peft_model(model, config)
     model.print_trainable_parameters()

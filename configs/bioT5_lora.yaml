@@ -1,14 +1,14 @@
 model:
   pretrained_model: QizhiPei/biot5-base
   out_dir: biot5_lora
-  max_len: 384
+  max_len: 192
   batch_size: 4
-  lr: 5e-5
-  n_epochs: 10
+  lr: 3e-4
+  n_epochs: 15
 lora:
-  r: 4
+  r: 32
   alpha: 32
-  dropout: 0.2
+  dropout: 0.0
   enabled: True
 data:
   subset: 100 # None for all data
