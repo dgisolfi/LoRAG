@@ -1,16 +1,20 @@
 model:
   pretrained_model: QizhiPei/biot5-base
-  out_dir: biot5
+  out_dir: biot5_qlora
   max_len: 256
   batch_size: 4
   lr: 2e-4
   n_epochs: 5
-  use_cpu: True
+  # CUDA is required for quantization
+  quantization: True
+  use_cpu: False
 lora:
-  enabled: False # Gather Baseline for T5 first
+  enabled: True
+  r: 32
+  alpha: 32
+  dropout: 0.05
 data:
   subset: 500 # None for all data
   dataset: derm_qa
   # dataset: medXpert
   # dataset: no_robots
-

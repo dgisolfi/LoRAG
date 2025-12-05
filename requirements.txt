@@ -1,10 +1,13 @@
-bert_score
 peft
 transformers
 PyYAML
 datasets
-sacrebleu
-evaluate
-rouge_score
 nltk
 torch
+matplotlib
+sentence-transformers
+# Metrics
+bert_score
+# evaluate
+# rouge_score
+# sacrebleu

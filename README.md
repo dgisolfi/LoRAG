@@ -4,7 +4,7 @@ CS7643 Final Project
 ## Author(s)
 
 - Daniel Nicolas Gisolfi <dgisolfi3@gatech.edu>
-- Kashaul ADD_LASTNAME <EMAIL@gatech.edu>
+- Kaushal Gandikota <kgandikota@gatech.edu>
 
 ## Usage
 
@@ -19,7 +19,35 @@ python3 -m pip install -r requirements.txt
 A config file can be specified via the cli, the default is under the configs dir.
 
 ```
-python3 ./src/train.py
+> python3 -m lorag --help                                 
+usage: __main__.py [-h] [--config CONFIG] [--no-cache]
+
+LoRAG Experiment
+
+options:
+  -h, --help       show this help message and exit
+  --config CONFIG  Path to YAML configuration file
+  --no-cache       Force regenerate tokenized dataset and ignore cached version
+```
+
+### Experiments
+
+#### Baseline for Model on dataset
+
+```
+python3 -m lorag --config .\configs\bioT5.yaml --no-cache
+```
+
+#### Apply LoRA
+
+```
+python3 -m lorag --config .\configs\bioT5_lora.yaml --no-cache
+```
+
+#### qLoRA
+
+```
+python3 -m lorag --config .\configs\bioT5_qlora.yaml --no-cache
 ```
 
 ## Plan / Dev Items for LoRA + RAG + Quantization ML pipeline
