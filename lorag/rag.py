@@ -2,7 +2,7 @@
 
 Author(s)
 ---------
-Kaushal Gandikota <kgandikota@gatech.edu>
+Kaushal Gandikota <kgandikota6@gatech.edu>
 """
 
 import os
