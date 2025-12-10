@@ -3,6 +3,7 @@
 Author(s)
 ---------
 Daniel Nicolas Gisolfi <dgisolfi3@gatech.edu>
+Kaushal Gandikota <kgandikota6@gatech.edu>
 """
 
 from typing import List
